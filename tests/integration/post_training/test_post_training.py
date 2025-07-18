@@ -106,7 +106,6 @@ class TestPostTraining:
             training_config=training_config,
             hyperparam_search_config={},
             logger_config={},
-            checkpoint_dir=None,
         )
 
         while True:

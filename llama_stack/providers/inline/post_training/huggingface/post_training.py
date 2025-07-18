@@ -122,7 +122,6 @@ class HuggingFacePostTrainingImpl:
         training_config: TrainingConfig,
         hyperparam_search_config: dict[str, Any],
         logger_config: dict[str, Any],
-        checkpoint_dir: str | None = None,
     ) -> PostTrainingJob:
         async def handler(on_log_message_cb, on_status_change_cb, on_artifact_collected_cb):
             on_log_message_cb("Starting HF DPO alignment")
@@ -133,8 +132,8 @@ class HuggingFacePostTrainingImpl:
                 datasets_api=self.datasets_api,
             )
 
-            # Use checkpoint_dir if provided, otherwise use default
-            output_dir = checkpoint_dir if checkpoint_dir else f"./checkpoints/dpo/{job_uuid}"
+            # Use default checkpoint directory
+            output_dir = f"./checkpoints/dpo/{job_uuid}"
 
             resources_allocated, checkpoints = await recipe.train(
                 model=finetuned_model,
