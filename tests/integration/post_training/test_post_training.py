@@ -162,7 +162,7 @@ class TestPostTraining:
                 "post-training/messages",
                 {
                     "type": "uri",
-                    "uri": "huggingface://datasets/trl-internal-testing/hh-rlhf-helpful-base-trl-style?split=train[:4]",  # Using first 100 samples for testing
+                    "uri": "huggingface://datasets/trl-internal-testing/hh-rlhf-helpful-base-trl-style?split=train[:100]",
                 },
             ),
         ],
