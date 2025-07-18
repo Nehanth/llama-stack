@@ -5,7 +5,6 @@
 # the root directory of this source tree.
 
 import gc
-import json
 import logging
 import multiprocessing
 import os
@@ -29,7 +28,6 @@ os.environ["MKL_NUM_THREADS"] = "1"
 
 import torch
 from datasets import Dataset
-from peft import LoraConfig
 from transformers import (
     AutoConfig,
     AutoModelForCausalLM,
@@ -41,9 +39,7 @@ from llama_stack.apis.datasetio import DatasetIO
 from llama_stack.apis.datasets import Datasets
 from llama_stack.apis.post_training import (
     Checkpoint,
-    DataConfig,
     DPOAlignmentConfig,
-    LoraFinetuningConfig,
     TrainingConfig,
 )
 
@@ -147,21 +143,21 @@ class HFDPOAlignmentSingleDevice:
     def validate_dataset_format(self, rows: list[dict]) -> bool:
         """Validate that the dataset has the required fields for DPO training."""
         required_fields = ["prompt", "chosen", "rejected"]
-        
+
         if not rows:
             logger.warning("Dataset is empty")
             return False
-            
+
         for i, row in enumerate(rows):
             if not isinstance(row, dict):
                 logger.warning(f"Row {i} is not a dictionary")
                 return False
-                
+
             for field in required_fields:
                 if field not in row:
                     logger.warning(f"Row {i} missing required DPO field: {field}")
                     return False
-                    
+
                 # Handle both string and list formats
                 if field == "prompt":
                     # Prompt should be a string
@@ -184,7 +180,7 @@ class HFDPOAlignmentSingleDevice:
                     else:
                         logger.warning(f"Row {i} field '{field}' is neither string nor list")
                         return False
-        
+
         logger.info(f"DPO dataset validation passed: {len(rows)} preference examples")
         return True
 
@@ -192,21 +188,25 @@ class HFDPOAlignmentSingleDevice:
         """Process a row in DPO format, handling both string and conversation list formats."""
         if all(field in row for field in ["prompt", "chosen", "rejected"]):
             prompt = row["prompt"]
-            
+
             # Handle chosen field - convert list to string if needed
             if isinstance(row["chosen"], list):
                 # For conversation format, concatenate messages
-                chosen = "\n".join([msg.get("content", "") if isinstance(msg, dict) else str(msg) for msg in row["chosen"]])
+                chosen = "\n".join(
+                    [msg.get("content", "") if isinstance(msg, dict) else str(msg) for msg in row["chosen"]]
+                )
             else:
                 chosen = row["chosen"]
-            
-            # Handle rejected field - convert list to string if needed  
+
+            # Handle rejected field - convert list to string if needed
             if isinstance(row["rejected"], list):
                 # For conversation format, concatenate messages
-                rejected = "\n".join([msg.get("content", "") if isinstance(msg, dict) else str(msg) for msg in row["rejected"]])
+                rejected = "\n".join(
+                    [msg.get("content", "") if isinstance(msg, dict) else str(msg) for msg in row["rejected"]]
+                )
             else:
                 rejected = row["rejected"]
-                
+
             return prompt, chosen, rejected
         return None, None, None
 
@@ -233,17 +233,19 @@ class HFDPOAlignmentSingleDevice:
         dpo_examples = []
         for row in rows:
             prompt, chosen, rejected = self._process_dpo_format(row)
-            
+
             if prompt and chosen and rejected:
                 # Format the texts
                 chosen_formatted = self._format_text_for_dpo(prompt, chosen, provider_config)
                 rejected_formatted = self._format_text_for_dpo(prompt, rejected, provider_config)
-                
-                dpo_examples.append({
-                    "prompt": prompt,
-                    "chosen": chosen_formatted,
-                    "rejected": rejected_formatted,
-                })
+
+                dpo_examples.append(
+                    {
+                        "prompt": prompt,
+                        "chosen": chosen_formatted,
+                        "rejected": rejected_formatted,
+                    }
+                )
 
         if not dpo_examples:
             raise ValueError("No valid preference examples found in dataset")
@@ -459,10 +461,10 @@ class HFDPOAlignmentSingleDevice:
     ) -> None:
         """Save the trained DPO model."""
         logger.info("Saving final DPO model")
-        
+
         save_path = output_dir_path / "dpo_model"
         logger.info(f"Saving model to {save_path}")
-        
+
         # Save model and tokenizer
         trainer.save_model(str(save_path))
 
@@ -540,7 +542,9 @@ class HFDPOAlignmentSingleDevice:
 
             # Save final model if output directory is provided
             if output_dir_path:
+                logger.info(f"Saving model to output directory: {output_dir_path}")
                 self.save_model(trainer, output_dir_path)
+                logger.info("Model save completed")
 
         finally:
             # Clean up resources
@@ -553,6 +557,7 @@ class HFDPOAlignmentSingleDevice:
             del ref_model
             gc.collect()
             logger.info("Cleanup completed")
+            logger.info("DPO training process finishing successfully")
 
     async def train(
         self,

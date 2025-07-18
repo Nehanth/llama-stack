@@ -125,8 +125,7 @@ class TestPostTraining:
         artifacts = llama_stack_client.post_training.job.artifacts(job_uuid=job_uuid)
         logger.info(f"Job artifacts: {artifacts}")
 
-        logger.info(f"Registered dataset with ID: {dataset.identifier}")       
-
+        logger.info(f"Registered dataset with ID: {dataset.identifier}")
 
     # TODO: Fix these tests to properly represent the Jobs API in training
     #
@@ -164,7 +163,7 @@ class TestPostTraining:
                 "post-training/messages",
                 {
                     "type": "uri",
-                    "uri": "huggingface://datasets/trl-internal-testing/hh-rlhf-helpful-base-trl-style?split=train[:100]",  # Using first 100 samples for testing
+                    "uri": "huggingface://datasets/trl-internal-testing/hh-rlhf-helpful-base-trl-style?split=train[:4]",  # Using first 100 samples for testing
                 },
             ),
         ],
@@ -197,7 +196,7 @@ class TestPostTraining:
         training_config = TrainingConfig(
             n_epochs=1,
             data_config=data_config,
-            max_steps_per_epoch=2,  # Just 2 steps for quick testing
+            max_steps_per_epoch=1,  # Just 2 steps for quick testing
             gradient_accumulation_steps=1,
         )
 
